@@ -7,7 +7,7 @@ sslyze --regular --targets_in=domain_list --json_out=output.json --heartbleed
 ```
 This will create a csv file parsing the ```output.json```
 ```bash
-python3 sslyze-parser.py -f output.json
+python3 sslyze_parser.py -f output.json
 ```
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
