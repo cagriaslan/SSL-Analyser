@@ -2,6 +2,19 @@ import argparse
 import json
 
 
+def get_field(dictionary, *param):
+    if len(param) == 2:
+        try:
+            return dictionary[param[0]][param[1]]
+        except KeyError:
+            return None
+    elif len(param) == 3:
+        try:
+            return dictionary[param[0]][param[1]][param[2]]
+        except KeyError:
+            return None
+
+
 def sslyze_parser(file_name):
     """A json file should be provided"""
     with open(file_name, "r", encoding="UTF-8") as fp:
@@ -11,23 +24,27 @@ def sslyze_parser(file_name):
              "Client Oriented Renegotiation, Secure Renegotiation\n"
     result = header
     for scan_result in sslyze_json["server_scan_results"]:
-        # Known vulnerabilities check
-        is_vulnerable_to_heartbleed = scan_result["scan_commands_results"]["heartbleed"]["is_vulnerable_to_heartbleed"]
-        is_vulnerable_to_ccs_injection = scan_result["scan_commands_results"]["openssl_ccs_injection"][
-            "is_vulnerable_to_ccs_injection"]
-        is_vulnerable_to_robot_attack = scan_result["scan_commands_results"]["robot"]["robot_result"]
-        downgrade_attack = scan_result["scan_commands_results"]["tls_fallback_scsv"]["supports_fallback_scsv"]
+        try:
+            # Known vulnerabilities check
+            # is_vulnerable_to_heartbleed = scan_result["scan_commands_results"]["heartbleed"]["is_vulnerable_to_heartbleed"]
+            is_vulnerable_to_heartbleed = get_field(scan_result, "scan_commands_results", "heartbleed", "is_vulnerable_to_heartbleed")
+            is_vulnerable_to_ccs_injection = scan_result["scan_commands_results"]["openssl_ccs_injection"][
+                "is_vulnerable_to_ccs_injection"]
+            is_vulnerable_to_robot_attack = scan_result["scan_commands_results"]["robot"]["robot_result"]
+            downgrade_attack = scan_result["scan_commands_results"]["tls_fallback_scsv"]["supports_fallback_scsv"]
 
-        # Session Renegotiation
-        client_oriented_reneg = scan_result["scan_commands_results"]["session_renegotiation"][
-            "accepts_client_renegotiation"]
-        secure_reneg = scan_result["scan_commands_results"]["session_renegotiation"]["supports_secure_renegotiation"]
+            # Session Renegotiation
+            client_oriented_reneg = scan_result["scan_commands_results"]["session_renegotiation"][
+                "accepts_client_renegotiation"]
+            secure_reneg = scan_result["scan_commands_results"]["session_renegotiation"]["supports_secure_renegotiation"]
 
-        # Weak cipher support should be implemented
+            # Weak cipher support should be implemented
 
-        # Hostname and IP
-        hostname = scan_result["server_info"]["server_location"]["hostname"]
-        ip = scan_result["server_info"]["server_location"]["ip_address"]
+            # Hostname and IP
+            hostname = scan_result["server_info"]["server_location"]["hostname"]
+            ip = scan_result["server_info"]["server_location"]["ip_address"]
+        except KeyError as e:
+            print(str(e))
 
         entry = "{},{},{},{},{},{},{},{}\n".format(hostname,
                                                    ip,
