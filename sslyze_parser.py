@@ -27,15 +27,13 @@ def sslyze_parser(file_name):
         # Known vulnerabilities check
         # is_vulnerable_to_heartbleed = scan_result["scan_commands_results"]["heartbleed"]["is_vulnerable_to_heartbleed"]
         is_vulnerable_to_heartbleed = get_field(scan_result, "scan_commands_results", "heartbleed", "is_vulnerable_to_heartbleed")
-        is_vulnerable_to_ccs_injection = scan_result["scan_commands_results"]["openssl_ccs_injection"][
-            "is_vulnerable_to_ccs_injection"]
-        is_vulnerable_to_robot_attack = scan_result["scan_commands_results"]["robot"]["robot_result"]
-        downgrade_attack = scan_result["scan_commands_results"]["tls_fallback_scsv"]["supports_fallback_scsv"]
+        is_vulnerable_to_ccs_injection = get_field(scan_result, "scan_commands_results", "openssl_ccs_injection", "is_vulnerable_to_ccs_injection")
+        is_vulnerable_to_robot_attack = get_field(scan_result, "scan_commands_results", "robot", "robot_result")
+        downgrade_attack = get_field(scan_result, "scan_commands_results", "tls_fallback_scsv", "supports_fallback_scsv")
 
         # Session Renegotiation
-        client_oriented_reneg = scan_result["scan_commands_results"]["session_renegotiation"][
-            "accepts_client_renegotiation"]
-        secure_reneg = scan_result["scan_commands_results"]["session_renegotiation"]["supports_secure_renegotiation"]
+        client_oriented_reneg = get_field(scan_result, "scan_commands_results", "session_renegotiation", "accepts_client_renegotiation")
+        secure_reneg = get_field(scan_result, "scan_commands_results", "session_renegotiation", "supports_secure_renegotiation")
 
         # Weak cipher support should be implemented
 
