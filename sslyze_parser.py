@@ -83,9 +83,57 @@ class SslyzeClass:
 
     def calculate_results(self):
         """Use sslyze library to implement the features below"""
-        # with open(args["input"].split(".")[0] + ".json", "r", encoding="UTF-8") as fp:
-        #     sslyze_json = json.load(fp)
-        #
+
+        subdomains = ["autodiscover.tpao.gov.tr",
+                      "mail.tpao.gov.tr",
+                      "mailhost.tpao.gov.tr",
+                      "odeme.tpao.gov.tr"]
+
+        for host in subdomains:
+            server_location = sslyze.ServerNetworkLocationViaDirectConnection.with_ip_address_lookup(hostname=host)
+
+        try:
+            server_info = sslyze.ServerConnectivityTester.perform(server_location)
+
+        except ConnectionError as e:
+            print(f"Error connecting to {server_location}: {e.error_message}")
+            return
+
+        scanner = sslyze.Scanner()
+        server_scan_req = sslyze.ServerScanRequest(server_info=server_info,
+                                                   scan_commands={sslyze.ScanCommand.CERTIFICATE_INFO,
+                                                                  sslyze.ScanCommand.HEARTBLEED,
+                                                                  sslyze.ScanCommand.ROBOT,
+                                                                  sslyze.ScanCommand.SSL_2_0_CIPHER_SUITES,
+                                                                  sslyze.ScanCommand.SSL_3_0_CIPHER_SUITES,
+                                                                  sslyze.ScanCommand.OPENSSL_CCS_INJECTION,
+                                                                  sslyze.ScanCommand.SESSION_RENEGOTIATION,
+                                                                  sslyze.ScanCommand.TLS_1_0_CIPHER_SUITES,
+                                                                  sslyze.ScanCommand.TLS_1_1_CIPHER_SUITES,
+                                                                  sslyze.ScanCommand.TLS_1_2_CIPHER_SUITES,
+                                                                  sslyze.ScanCommand.TLS_1_3_CIPHER_SUITES,
+                                                                  sslyze.ScanCommand.SESSION_RESUMPTION,
+                                                                  sslyze.ScanCommand.TLS_COMPRESSION,
+                                                                  sslyze.ScanCommand.TLS_FALLBACK_SCSV,
+                                                                  })
+
+        scanner.queue_scan(server_scan_req)
+
+        for server_scan_result in scanner.get_results():
+            print(f"\nResults for {server_scan_result.server_info.server_location.hostname}:")
+
+        ssl2_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.SSL_2_0_CIPHER_SUITES]
+        print("\nAccepted cipher suites for SSL 2.0:")
+
+        for accepted_cipher_suite in ssl2_result:  # in ssl2_result.accepted_cipher_suites:
+            print(f"* {accepted_cipher_suite.cipher_suite.name}")
+
+        certinfo_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.CERTIFICATE_INFO]
+        print("\nCertificate info:")
+        for cert_deployment in certinfo_result.certificate_deployments:
+            print(f"Leaf certificate: \n{cert_deployment.received_certificate_chain_as_pem[0]}")
+
+
         # header = "Hostname, IP, Heartbleed, CCS Injection, Robot Attack, Downgrade Attack, " \
         #          "Client Oriented Renegotiation, Secure Renegotiation\n"
         # result = header
