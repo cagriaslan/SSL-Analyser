@@ -1,14 +1,17 @@
 import sslyze
+import json
+from dataclasses import asdict
 
 
 def scann():
     servers_to_scan = []
 
-    sub = ['mail.tpao.gov.tr',
-           'mailhost.tpao.gov.tr',
-           'autodiscover.tpao.gov.tr',
-           'odeme.tpao.gov.tr'
-           ]
+    # sub = ['odeme.tpao.gov.tr',
+    #        'mail.tpao.gov.tr',
+    #        'mailhost.tpao.gov.tr',
+    #        'autodiscover.tpao.gov.tr'
+    #        ]
+    sub = ['odeme.tpao.gov.tr']
 
     for hostname in sub:
         server_location = sslyze.ServerNetworkLocationViaDirectConnection.with_ip_address_lookup(hostname, 443)
@@ -94,18 +97,18 @@ def scann():
         except KeyError:
             pass
 
-        try:
-            certinfo_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.CERTIFICATE_INFO]
-            print("\nCertificate info:")
-            for cert_deployment in certinfo_result.certificate_deployments:
-                print(f"Leaf certificate: \n{cert_deployment.received_certificate_chain_as_pem[0]}")
-        except KeyError:
-            pass
+        # try:
+        #     certinfo_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.CERTIFICATE_INFO]
+        #     print("\nCertificate info:")
+        #     for cert_deployment in certinfo_result.certificate_deployments:
+        #         print(f"Leaf certificate: \n{cert_deployment.received_certificate_chain_as_pem[0]}")
+        # except KeyError:
+        #     pass
 
         try:
             heartbleed_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.HEARTBLEED]
             print("\nResult for heartbleed:")
-            print(f"{str(heartbleed_result.is_vulnerable_to_heartbleed)}")
+            print(f"*{str(heartbleed_result.is_vulnerable_to_heartbleed)}")
         except KeyError as e:
             print(e)
 
@@ -127,7 +130,7 @@ def scann():
         try:
             session_reneg = server_scan_result.scan_commands_results[sslyze.ScanCommand.SESSION_RENEGOTIATION]
             print("\nResult for session renegotiation:")
-            print(f"* accepts client renegotitation: {str(session_reneg.accepts_client_renegotiation)} \n "
+            print(f"* accepts client renegotitation: {str(session_reneg.accepts_client_renegotiation)} \n"
                   f"* supports_secure_renegotiation: {str(session_reneg.supports_secure_renegotiation)}")
 
         except KeyError as e:
@@ -149,10 +152,26 @@ def scann():
         except KeyError as e:
             print(e)
 
-        # Scan commands that were run with errors
-        for scan_command, error in server_scan_result.scan_commands_errors.items():
-            print(f"\nError when running {scan_command}:\n{error.exception_trace}")
+        try:
+            # Scan commands that were run with errors
+            for scan_command, error in server_scan_result.scan_commands_errors.items():
+                print(f"\nError when running {scan_command}:\n{error.exception_trace}")
 
+        except TimeoutError as t:
+            print(t)
+
+        server_scan_result_as_json = json.dumps(asdict(server_scan_result), cls=sslyze.JsonEncoder, indent=4)
+        # print('deneme')
+        # print(server_scan_result_as_json)
+
+    with open('sslyze_lib.json', 'w', encoding='UTF-8') as json_file:
+        json_file.write(server_scan_result_as_json)
+
+
+# def write_to_json(scanner):
 
 if __name__ == '__main__':
     scann()
+
+
+
