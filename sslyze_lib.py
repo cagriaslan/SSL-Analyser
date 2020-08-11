@@ -38,7 +38,7 @@ def scann():
                                                                   sslyze.ScanCommand.TLS_1_1_CIPHER_SUITES,
                                                                   sslyze.ScanCommand.TLS_1_2_CIPHER_SUITES,
                                                                   sslyze.ScanCommand.TLS_1_3_CIPHER_SUITES,
-                                                                  # sslyze.ScanCommand.SESSION_RESUMPTION,
+                                                                  sslyze.ScanCommand.SESSION_RESUMPTION,
                                                                   sslyze.ScanCommand.TLS_COMPRESSION,
                                                                   sslyze.ScanCommand.TLS_FALLBACK_SCSV,
                                                                   })
@@ -97,14 +97,6 @@ def scann():
         except KeyError:
             pass
 
-        # try:
-        #     certinfo_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.CERTIFICATE_INFO]
-        #     print("\nCertificate info:")
-        #     for cert_deployment in certinfo_result.certificate_deployments:
-        #         print(f"Leaf certificate: \n{cert_deployment.received_certificate_chain_as_pem[0]}")
-        # except KeyError:
-        #     pass
-
         try:
             heartbleed_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.HEARTBLEED]
             print("\nResult for heartbleed:")
@@ -161,14 +153,10 @@ def scann():
             print(t)
 
         server_scan_result_as_json = json.dumps(asdict(server_scan_result), cls=sslyze.JsonEncoder, indent=4)
-        # print('deneme')
-        # print(server_scan_result_as_json)
 
-    with open('sslyze_lib.json', 'w', encoding='UTF-8') as json_file:
+    with open('blabla.json', 'w', encoding='UTF-8') as json_file:
         json_file.write(server_scan_result_as_json)
 
-
-# def write_to_json(scanner):
 
 if __name__ == '__main__':
     scann()
