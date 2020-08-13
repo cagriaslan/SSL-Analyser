@@ -14,6 +14,18 @@ ap.add_argument("-k", "--keep", action='store_true', help="Keep unparsed sslyze 
 args = vars(ap.parse_args())
 """end of argument parsing section"""
 
+"""This part will be implemented in install_sslyze and calculate_results instead of here"""
+# def sslyze_starter():
+#     if args["install"]:
+#         subprocess.run(["pip3", "install", "upgrade", "setuptools"])
+#         subprocess.run(["pip3", "install", "upgrade", "sslyze"])
+#     else:
+#         pass
+#
+#     os.system(
+#         "python3 -m sslyze --regular --targets_in=" + args['input'] + " --json_out=" + args["input"].split(".")[0] +
+#         ".json --heartbleed --slow_connection")
+
 
 def get_field(dictionary, *param):
     """This can be static method and doesn't need to be inside of the class"""
@@ -273,6 +285,7 @@ class SslyzeClass:
                 print(t)
 
             self.sslyze_result = json.dumps(asdict(server_scan_result), cls=sslyze.JsonEncoder, indent=4)
+
 
 
 if __name__ == '__main__':
