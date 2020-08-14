@@ -1,10 +1,9 @@
+from dataclasses import asdict
 import argparse
 import sys  # check uninstalled library
 import sslyze
 import json
 import subprocess
-
-from dataclasses import asdict
 
 """argument parsing section"""
 ap = argparse.ArgumentParser()
@@ -15,6 +14,8 @@ args = vars(ap.parse_args())
 """end of argument parsing section"""
 
 """This part will be implemented in install_sslyze and calculate_results instead of here"""
+
+
 # def sslyze_starter():
 #     if args["install"]:
 #         subprocess.run(["pip3", "install", "upgrade", "setuptools"])
@@ -54,7 +55,7 @@ class SslyzeClass:
         self.is_sslyze_present = check_sslyze()  # to check if sslyze is present on the system
         self.servers_to_scan = []  # server informations for sslyze scanning process
         self.scanner_get_result = {}
-        self.sslyze_result = {}  # server scan result as json
+        self.sslyze_result = []  # server scan result as json
 
         """
         dict structure:
@@ -81,65 +82,52 @@ class SslyzeClass:
     def write_to_csv(self):
         """Write to csv using self.sslyze_result"""
 
-        with open(args["output"].split(".")[0] + ".json", "r", encoding="UTF-8") as fp:
-            sslyze_json = json.load(fp)
-
         header = "Hostname, IP, Heartbleed, CCS Injection, Robot Attack, Downgrade Attack, " \
                  "Client Oriented Renegotiation, Secure Renegotiation\n"
         result = header
+        # for scan_result in sslyze_json:
+        # Known vulnerabilities check is_vulnerable_to_heartbleed = scan_result["scan_commands_results"]
+        # ["heartbleed"]["is_vulnerable_to_heartbleed"]
+        for each in self.sslyze_result:
+            is_vulnerable_to_heartbleed = get_field(each, "scan_commands_results", "heartbleed", "is_vulnerable_to_heartbleed")
+            is_vulnerable_to_ccs_injection = get_field(each, "scan_commands_results", "openssl_ccs_injection", "is_vulnerable_to_ccs_injection")
+            is_vulnerable_to_robot_attack = get_field(each, "scan_commands_results", "robot", "robot_result")
+            downgrade_attack = get_field(each, "scan_commands_results", "tls_fallback_scsv", "supports_fallback_scsv")
 
-        #for scan_result in sslyze_json:
-            # Known vulnerabilities check is_vulnerable_to_heartbleed = scan_result["scan_commands_results"]
-            # ["heartbleed"]["is_vulnerable_to_heartbleed"]
+            # Session Renegotiation
+            client_oriented_reneg = get_field(each, "scan_commands_results", "session_renegotiation", "accepts_client_renegotiation")
+            secure_reneg = get_field(each, "scan_commands_results", "session_renegotiation", "supports_secure_renegotiation")
 
-        is_vulnerable_to_heartbleed = get_field(sslyze_json, "scan_commands_results", "heartbleed",
-                                                     "is_vulnerable_to_heartbleed")
-        is_vulnerable_to_ccs_injection = get_field(sslyze_json, "scan_commands_results",
-                                                        "openssl_ccs_injection",
-                                                        "is_vulnerable_to_ccs_injection")
-        is_vulnerable_to_robot_attack = get_field(sslyze_json, "scan_commands_results", "robot",
-                                                       "robot_result")
-        downgrade_attack = get_field(sslyze_json, "scan_commands_results", "tls_fallback_scsv",
-                                          "supports_fallback_scsv")
+            # Weak cipher support should be implemented
 
-        # Session Renegotiation
-        client_oriented_reneg = get_field(sslyze_json, "scan_commands_results", "session_renegotiation",
-                                               "accepts_client_renegotiation")
-        secure_reneg = get_field(sslyze_json, "scan_commands_results", "session_renegotiation",
-                                      "supports_secure_renegotiation")
+            # Hostname and IP
+            hostname = each["server_info"]["server_location"]["hostname"]
+            ip = each["server_info"]["server_location"]["ip_address"]
 
-        # Weak cipher support should be implemented
-
-        # Hostname and IP
-        hostname = sslyze_json["server_info"]["server_location"]["hostname"]
-        ip = sslyze_json["server_info"]["server_location"]["ip_address"]
-
-        entry = "{},{},{},{},{},{},{},{}\n".format(hostname,
-                                                   ip,
-                                                   "Vulnerable to Heartbleed" if is_vulnerable_to_heartbleed else "Not vulnerable to Heartbleed",
-                                                   "Vulnerable to CCS injection" if is_vulnerable_to_ccs_injection else "Not vulnerable to OpenSSL CCS injection",
-                                                   is_vulnerable_to_robot_attack,
-                                                   "OK - Supported" if downgrade_attack else "Downgrade Attack Possible",
-                                                   "VULNERABLE - Server honors client-initiated renegotiations" if client_oriented_reneg else "Not vulnerable",
-                                                   "OK - Supported" if secure_reneg else "Not Supported")
-        #result = result + entry
+            entry = "{},{},{},{},{},{},{},{}\n".format(hostname,
+                                                       ip,
+                                                       "Vulnerable to Heartbleed" if is_vulnerable_to_heartbleed else "Not vulnerable to Heartbleed",
+                                                       "Vulnerable to CCS injection" if is_vulnerable_to_ccs_injection else "Not vulnerable to OpenSSL CCS injection",
+                                                       is_vulnerable_to_robot_attack,
+                                                       "OK - Supported" if downgrade_attack else "Downgrade Attack Possible",
+                                                       "VULNERABLE - Server honors client-initiated renegotiations" if client_oriented_reneg else "Not vulnerable",
+                                                       "OK - Supported" if secure_reneg else "Not Supported")
+            result = result + entry
         # above code is from old snippet
-
-        with open(args["output"] + ".csv", "w", encoding="UTF-8") as fp:
-            fp.write(entry)
+        with open(self.output_file + ".csv", "w", encoding="UTF-8") as fp:
+            fp.write(result)
 
     def write_to_json(self):
         """Write raw sslyze output to json just before parsing"""
-
-        with open(args['output'] + '.json', 'w', encoding='UTF-8') as json_file:
-            json_file.write(self.sslyze_result)
+        temp_dict = {"results": self.sslyze_result}
+        with open(self.output_file + '.json', 'w', encoding='UTF-8') as json_file:
+            json.dump(temp_dict, json_file, cls=sslyze.JsonEncoder, indent=4)
 
     def calculate_results(self):
         """Use sslyze library to implement the features below"""
 
         # server connection testing
         for hostname in self.subdomain_list:
-
             try:
                 server_location = sslyze.ServerNetworkLocationViaDirectConnection.with_ip_address_lookup(hostname, 443)
                 try:
@@ -149,7 +137,7 @@ class SslyzeClass:
                     print(f"Error connecting to {server_location.hostname}:{server_location.port}: {e.error_message}")
                     return
             except:
-                print("Cannot resolve "+hostname+", skipping..")
+                print("Cannot resolve " + hostname + ", skipping..")
                 pass
 
         scanner = sslyze.Scanner()
@@ -175,7 +163,6 @@ class SslyzeClass:
             scanner.queue_scan(server_scan_req)
 
         self.scanner_get_result = scanner.get_results()
-
         # Then retrieve the result of the scan commands for each server
         for server_scan_result in scanner.get_results():
             print(f"\nResults for {server_scan_result.server_info.server_location.hostname}:")
@@ -284,8 +271,9 @@ class SslyzeClass:
             except TimeoutError as t:
                 print(t)
 
-            self.sslyze_result = json.dumps(asdict(server_scan_result), cls=sslyze.JsonEncoder, indent=4)
-
+            self.sslyze_result.append(asdict(server_scan_result))
+            with open(server_scan_result.server_info.server_location.hostname + ".json", "w", encoding="UTF-8") as ff:
+                ff.write(json.dumps(asdict(server_scan_result), cls=sslyze.JsonEncoder))
 
 
 if __name__ == '__main__':
@@ -295,6 +283,6 @@ if __name__ == '__main__':
 
     if args["keep"]:
         sslyze_obj.write_to_json()
+        sslyze_obj.write_to_csv()
     else:
-        pass
-    sslyze_obj.write_to_csv()
+        sslyze_obj.write_to_csv()
