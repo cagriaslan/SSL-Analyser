@@ -272,8 +272,6 @@ class SslyzeClass:
                 print(t)
 
             self.sslyze_result.append(asdict(server_scan_result))
-            with open(server_scan_result.server_info.server_location.hostname + ".json", "w", encoding="UTF-8") as ff:
-                ff.write(json.dumps(asdict(server_scan_result), cls=sslyze.JsonEncoder))
 
 
 if __name__ == '__main__':
