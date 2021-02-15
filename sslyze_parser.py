@@ -234,24 +234,23 @@ class SslyzeClass:
                 openssl_css_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.OPENSSL_CCS_INJECTION]
                 print("\nResult for openssl:")
                 print(f"* {str(openssl_css_result.is_vulnerable_to_ccs_injection)}")
-
             except KeyError as e:
                 print(e)
 
             try:
                 session_reneg = server_scan_result.scan_commands_results[sslyze.ScanCommand.SESSION_RENEGOTIATION]
                 print("\nResult for session renegotiation:")
-                print(f"* accepts client renegotitation: {str(session_reneg.accepts_client_renegotiation)} \n"
+                print(f"* accepts client renegotitation: {str(session_reneg.is_vulnerable_to_client_renegotiation_dos)} \n"
                       f"* supports_secure_renegotiation: {str(session_reneg.supports_secure_renegotiation)}")
-
             except KeyError as e:
                 print(e)
+            except AttributeError as f:
+                print(f)
 
             try:
                 tls_compression_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.TLS_COMPRESSION]
                 print("\nResult for TLS Compression:")
                 print(f"* {str(tls_compression_result.supports_compression)}")
-
             except KeyError as e:
                 print(e)
 
@@ -259,7 +258,6 @@ class SslyzeClass:
                 tls_fallback_result = server_scan_result.scan_commands_results[sslyze.ScanCommand.TLS_FALLBACK_SCSV]
                 print("\nResult for TLS Fallback Downgrade Prevention:")
                 print(f"* {str(tls_fallback_result.supports_fallback_scsv)}")
-
             except KeyError as e:
                 print(e)
 
@@ -267,7 +265,6 @@ class SslyzeClass:
                 # Scan commands that were run with errors
                 for scan_command, error in server_scan_result.scan_commands_errors.items():
                     print(f"\nError when running {scan_command}:\n{error.exception_trace}")
-
             except TimeoutError as t:
                 print(t)
 
